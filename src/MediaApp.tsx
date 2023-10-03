@@ -210,7 +210,7 @@ const MediaApp = () => {
       </Dialog>
       <MediaSettings
         open={settingsOpen}
-        onClose={closeSettings}
+        onClose={closeSetup}
         mediaConfig={mediaConfig}
       ></MediaSettings>
       {mediaFactory && (
