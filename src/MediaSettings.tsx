@@ -197,8 +197,8 @@ const MediaSettings = ({ open, onClose, mediaConfig }) => {
       {currentTabIndex === 0 && (
         <DialogContent>
           <DialogContentText>
-            For a functional setup all current fields are required. Please click
-            Next to continue.
+            Libra version is {APP_VERSION}. For a functional setup all
+            current fields are required. Please click Next to continue.
           </DialogContentText>
           {/* <TextField
             autoFocus

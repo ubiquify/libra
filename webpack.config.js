@@ -1,4 +1,7 @@
 const path = require("path");
+const webpack = require('webpack');
+const packageJson = require('./package.json');
+
 module.exports = {
     entry: "/dist/MediaApp.js",
     mode: 'development',
@@ -60,6 +63,9 @@ module.exports = {
         },
     },
     plugins: [
+        new webpack.DefinePlugin({
+            APP_VERSION: JSON.stringify(packageJson.version)
+        }),
     ],
     experiments: {
         asyncWebAssembly: true,

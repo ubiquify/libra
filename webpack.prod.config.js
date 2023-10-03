@@ -1,5 +1,7 @@
 const path = require("path");
 const TerserPlugin = require("terser-webpack-plugin");
+const webpack = require('webpack');
+const packageJson = require('./package.json');
 
 module.exports = {
   entry: "/dist/MediaApp.js",
@@ -50,6 +52,9 @@ module.exports = {
     },
   },
   plugins: [
+    new webpack.DefinePlugin({
+      APP_VERSION: JSON.stringify(packageJson.version)
+    }),
   ],
   optimization: {
     minimizer: [
