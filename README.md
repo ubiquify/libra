@@ -48,7 +48,7 @@ Use docker-compose for a quick start. Certificates (`server.key` and `server.crt
 version: "3"
 services:
   libra-server-9503:
-    image: ubiquify/libra:0.0.12
+    image: ubiquify/libra:0.0.13
     container_name: libra-server-9503
     ports:
       - "443:9503"
