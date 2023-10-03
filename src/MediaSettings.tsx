@@ -168,7 +168,6 @@ const MediaSettings = ({ open, onClose, mediaConfig }) => {
 
   const isConfigurationIncomplete = (): boolean => {
     return (
-      namedRelays.length === 0 ||
       !author ||
       !email ||
       !privateSignatureKey ||
@@ -183,7 +182,7 @@ const MediaSettings = ({ open, onClose, mediaConfig }) => {
       <Tabs value={currentTabIndex} onChange={handleTabChange}>
         <Tab
           icon={<AppRegistrationIcon />}
-          label="Welcome"
+          label="About"
           iconPosition="start"
         />
         <Tab icon={<HubOutlinedIcon />} label="Relays" iconPosition="start" />
@@ -197,8 +196,8 @@ const MediaSettings = ({ open, onClose, mediaConfig }) => {
       {currentTabIndex === 0 && (
         <DialogContent>
           <DialogContentText>
-            Libra version is {APP_VERSION}. For a functional setup all
-            current fields are required. Please click Next to continue.
+            Libra version is {APP_VERSION}. For a functional setup all current
+            fields are required. Please click Next to continue.
           </DialogContentText>
           {/* <TextField
             autoFocus
