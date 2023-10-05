@@ -48,7 +48,7 @@ Use docker-compose for a quick start. Certificates (`server.key` and `server.crt
 version: "3"
 services:
   libra-server-9503:
-    image: ubiquify/libra:0.0.13
+    image: ubiquify/libra:latest
     container_name: libra-server-9503
     ports:
       - "443:9503"
@@ -58,7 +58,7 @@ services:
         target: /app/ssl
 
   relay-server-3003:
-    image: ubiquify/relay:0.0.14
+    image: ubiquify/relay:latest
     container_name: relay-server-3003
     ports:
       - "3003:3003"
