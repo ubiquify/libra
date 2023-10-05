@@ -7,7 +7,7 @@ import {
 } from "@ubiquify/media";
 import { MediaFactory } from "./MediaFactory";
 import { v4 as uuid } from "uuid";
-
+import axios from "axios";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Stack from "@mui/material/Stack";
@@ -96,6 +96,7 @@ const MediaList: React.FC<MediaListProps> = ({
   onActionPathChange,
 }) => {
   const [exportURL, setExportURL] = useState("");
+  const [importURL, setImportURL] = useState("");
   const [exportOpen, setExportOpen] = useState(false);
   const [bundleAlias, setBundleAlias] = useState<string>("");
   const [bundledCollection, setBundledCollection] =
@@ -108,6 +109,7 @@ const MediaList: React.FC<MediaListProps> = ({
   const [removedMediaNodes, setRemovedMediaNodes] = useState<MediaNode[]>([]);
   const [addedMediaNodes, setAddedMediaNodes] = useState<MediaNode[]>([]);
   const [relayImportOpen, setRelayImportOpen] = useState(false);
+  const [urlImportOpen, setUrlImportOpen] = useState(false);
   const [relayCollectionId, setRelayCollectionId] = useState("");
   const [currentRelay, setCurrentRelay] = useState<string | undefined>(
     undefined
@@ -380,6 +382,29 @@ const MediaList: React.FC<MediaListProps> = ({
     }
   };
 
+  const handleImportFromUrl = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(importURL, {
+        responseType: "arraybuffer",
+      });
+      if (response.data) {
+        const bytes = new Uint8Array(response.data);
+        const newCollection = await mediaFactory.readMediaCollectionFromBundle(
+          bytes
+        );
+        const newCollectionSize = await newCollection.persistedSize();
+        setBundledCollectionSize(newCollectionSize);
+        setBundledCollection(newCollection);
+      }
+      handleCloseUrlImport();
+    } catch (e) {
+      displayAlert(`Error importing from ${importURL}: ${e}`, "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCloseImport = () => {
     setImportOpen(false);
   };
@@ -435,6 +460,14 @@ const MediaList: React.FC<MediaListProps> = ({
 
   const handleOpenRelayImport = () => {
     setRelayImportOpen(true);
+  };
+
+  const handleOpenUrlImport = () => {
+    setUrlImportOpen(true);
+  };
+
+  const handleCloseUrlImport = () => {
+    setUrlImportOpen(false);
   };
 
   const isValidContentIdentifier = (contentIdentifier: string) => {
@@ -696,7 +729,7 @@ const MediaList: React.FC<MediaListProps> = ({
               spacing={0}
             >
               <Button component="label">
-                Bundle
+                File
                 <input
                   type="file"
                   accept=".car"
@@ -704,9 +737,16 @@ const MediaList: React.FC<MediaListProps> = ({
                   onChange={handleBundleUpload}
                 />
               </Button>
-              <Button component="label" onClick={handleOpenRelayImport}>
-                Relay
+              <Divider orientation="vertical" flexItem />
+              <Button component="label" onClick={handleOpenUrlImport}>
+                URL
               </Button>
+              <Divider orientation="vertical" flexItem />
+              {namedRelays.length > 0 && (
+                <Button component="label" onClick={handleOpenRelayImport}>
+                  Relay
+                </Button>
+              )}
             </Stack>
             {bundledCollection && (
               <Typography variant="subtitle1" color="GrayText">
@@ -743,6 +783,29 @@ const MediaList: React.FC<MediaListProps> = ({
           >
             Import
           </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog open={urlImportOpen} fullWidth={true}>
+        <DialogTitle>From URL</DialogTitle>
+        <DialogContent>
+          <Stack spacing={0} direction="row" alignItems="flex-center">
+            <TextField
+              autoFocus
+              margin="normal"
+              id="remoteMediaUrl"
+              label="Remote Media URL"
+              type="url"
+              fullWidth
+              variant="standard"
+              value={importURL}
+              onChange={(e) => setImportURL(e.target.value)}
+              placeholder="CORS & HTTPS enabled, eg. https://server/bundle.car"
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseUrlImport}>Cancel</Button>
+          <Button onClick={handleImportFromUrl}>Import</Button>
         </DialogActions>
       </Dialog>
       <Dialog open={relayImportOpen} fullWidth={true}>

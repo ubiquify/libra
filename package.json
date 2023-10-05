@@ -1,6 +1,6 @@
 {
   "name": "@ubiquify/libra",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "description": "Browser based, client centric media application",
   "repository": "https://github.com/ubiquify/libra.git",
   "keywords": [
@@ -27,11 +27,12 @@
     "@types/react": "^18.2.14",
     "@types/react-dom": "^18.2.6",
     "@types/react-modal": "^3.16.0",
-    "@ubiquify/core": "^0.0.8",
-    "@ubiquify/media": "^0.0.22",
+    "@ubiquify/core": "^0.0.9",
+    "@ubiquify/media": "^0.0.23",
     "@ubiquify/weblock": "^0.0.3",
     "@uiw/react-markdown-preview": "4.1.15",
     "@uiw/react-md-editor": "3.23.5",
+    "axios": "^1.4.0",
     "base64-js": "^1.5.1",
     "idb-keyval": "^6.2.1",
     "mui-image": "^1.0.7",

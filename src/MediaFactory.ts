@@ -20,7 +20,7 @@ import {
   mediaCollectionFactory,
   ContentAddressable,
   NamedMediaCollection,
-  newMediaCollectionFromBundle,
+  importMediaCollectionComplete,
   pullMediaCollection as pullCollection,
   createMediaSystemViewCurrent,
   MediaSystemView,
@@ -262,6 +262,7 @@ export const mediaFactoryBuilder = async (): Promise<MediaFactory> => {
       await ensureCurrentMediaCollectionByAlias(alias);
     await mediaCollection.commit(commitInfo);
     return {
+      getVersionStore: mediaCollection.getVersionStore,
       versionStoreRoot: mediaCollection.versionStoreRoot,
       versionStoreId: mediaCollection.versionStoreId,
       currentRoot: mediaCollection.currentRoot,
@@ -275,6 +276,7 @@ export const mediaFactoryBuilder = async (): Promise<MediaFactory> => {
     const { versionStoreRoot } = await mediaSystem.commit(commitInfo);
     await setRoot(linkCodec.encodeString(versionStoreRoot));
     return {
+      getVersionStore: mediaSystem.getVersionStore,
       versionStoreRoot: mediaSystem.versionStoreRoot,
       versionStoreId: mediaSystem.versionStoreId,
       currentRoot: mediaSystem.currentRoot,
@@ -285,14 +287,14 @@ export const mediaFactoryBuilder = async (): Promise<MediaFactory> => {
   const exportMediaCollection = async (alias: string): Promise<Block> => {
     const mediaCollection: NamedMediaCollection =
       await ensureCurrentMediaCollectionByAlias(alias);
-    const bundle = mediaCollection.exportBundle();
+    const bundle = mediaCollection.exportComplete();
     return bundle;
   };
 
   const readMediaCollectionFromBundle = async (
     bundle: Uint8Array
   ): Promise<MediaCollection> => {
-    const mediaCollection = await newMediaCollectionFromBundle(bundle, {
+    const mediaCollection = await importMediaCollectionComplete(bundle, {
       chunk,
       chunkSize: CHUNK_SIZE_DEFAULT,
       linkCodec,
