@@ -26,6 +26,8 @@ import {
   USER_PRIVATE_KEY_KEY,
   USER_PUBLIC_KEY_KEY,
 } from "./MediaConfig";
+import { Divider } from "@mui/material";
+import { Stack } from "@mui/system";
 
 const MediaSettings = ({ open, onClose, mediaConfig }) => {
   const [newRelayName, setNewRelayName] = useState("");
@@ -38,6 +40,8 @@ const MediaSettings = ({ open, onClose, mediaConfig }) => {
   const [author, setAuthor] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [appName, setAppName] = useState<string>("Libra Media");
+  const [importKeysOpen, setImportKeysOpen] = useState<boolean>(false);
+  const [exportKeysOpen, setExportKeysOpen] = useState<boolean>(false);
 
   const fetchConfig = async () => {
     const relays = await mediaConfig.listNamedRelays();
@@ -177,29 +181,35 @@ const MediaSettings = ({ open, onClose, mediaConfig }) => {
   };
 
   return (
-    <Dialog open={open} onClose={undefined} fullWidth={true}>
-      <DialogTitle>Libra Setup</DialogTitle>
-      <Tabs value={currentTabIndex} onChange={handleTabChange}>
-        <Tab
-          icon={<AppRegistrationIcon />}
-          label="About"
-          iconPosition="start"
-        />
-        <Tab icon={<HubOutlinedIcon />} label="Relays" iconPosition="start" />
-        <Tab
-          icon={<PermIdentityOutlinedIcon />}
-          label="Identity"
-          iconPosition="start"
-        />
-        <Tab icon={<VpnKeyOutlinedIcon />} label="Keys" iconPosition="start" />
-      </Tabs>
-      {currentTabIndex === 0 && (
-        <DialogContent>
-          <DialogContentText>
-            Libra version is {APP_VERSION}. For a functional setup all current
-            fields are required. Please click Next to continue.
-          </DialogContentText>
-          {/* <TextField
+    <div>
+      <Dialog open={open} onClose={undefined} fullWidth={true}>
+        <DialogTitle>Libra Setup</DialogTitle>
+        <Tabs value={currentTabIndex} onChange={handleTabChange}>
+          <Tab
+            icon={<AppRegistrationIcon />}
+            label="About"
+            iconPosition="start"
+          />
+          <Tab icon={<HubOutlinedIcon />} label="Relays" iconPosition="start" />
+          <Tab
+            icon={<PermIdentityOutlinedIcon />}
+            label="Identity"
+            iconPosition="start"
+          />
+          <Tab
+            icon={<VpnKeyOutlinedIcon />}
+            label="Keys"
+            iconPosition="start"
+          />
+        </Tabs>
+        {currentTabIndex === 0 && (
+          <DialogContent>
+            <DialogContentText>
+              Libra version is {APP_VERSION}. For a functional setup all fields
+              are required. All data you provide will stay in the browser.
+              Please click Next to continue.
+            </DialogContentText>
+            {/* <TextField
             autoFocus
             margin="normal"
             id="appName"
@@ -210,136 +220,193 @@ const MediaSettings = ({ open, onClose, mediaConfig }) => {
             onChange={(e) => setAppName(e.target.value)}
             placeholder="Eg. My Media Vault"
           /> */}
-        </DialogContent>
-      )}
-      {currentTabIndex === 1 && (
-        <DialogContent>
-          <DialogContentText>
-            Add one or more relays. For instance you can run a local relay to
-            exchange media with other users on your local network. Press ADD
-            RELAY to confirm the input.
-          </DialogContentText>
-          <TextField
-            margin="normal"
-            id="newRelayName"
-            label="Relay Name"
-            fullWidth
-            value={newRelayName}
-            onChange={(e) => setNewRelayName(e.target.value)}
-            placeholder="Eg. Localhost Relay"
-          />
-          <TextField
-            margin="normal"
-            id="newRelayValue"
-            label="Relay URL"
-            type="url"
-            fullWidth
-            value={newRelayValue}
-            placeholder="Eg. https://localhost:3003"
-            error={!relayExists}
-            onChange={(e) => setNewRelayValue(e.target.value)}
-          />
-          <Button color="primary" onClick={addRelay}>
-            Add Relay
-          </Button>
-          <List>
-            {namedRelays.map((relay: Relay, index: number) => (
-              <ListItem
-                key={`relay-config-${btoa(relay.name)}-${btoa(relay.url)}`}
-              >
-                <ListItemText primary={`${relay.name}: ${relay.url}`} />
-                <Button onClick={() => removeRelay(index)}>Remove</Button>
-              </ListItem>
-            ))}
-          </List>
-        </DialogContent>
-      )}
-      {currentTabIndex === 2 && (
-        <DialogContent>
-          <DialogContentText>
-            Configure your desired identity. Invalid email address are fine as
-            long as are properly formatted.
-          </DialogContentText>
-          <TextField
-            autoFocus
-            margin="normal"
-            id="author"
-            label="Author"
-            type="text"
-            fullWidth
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
-            placeholder="Eg. John Doe"
-          />
-          <TextField
-            autoFocus
-            margin="normal"
-            id="email"
-            label="Email"
-            type="email"
-            fullWidth
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Eg. john@doe.me"
-          />
-        </DialogContent>
-      )}
-      {currentTabIndex === 3 && (
-        <DialogContent>
-          <DialogContentText>
-            Keys are required for media signing and verification (JWK).
-          </DialogContentText>
-          <TextField
-            autoFocus
-            margin="normal"
-            id="privateKey"
-            label="Private Key"
-            type="text"
-            fullWidth
-            multiline
-            maxRows={5}
-            value={privateSignatureKey}
-            onChange={(e) => setPrivateSignatureKey(e.target.value)}
-            placeholder="Paste your private key in JWK format or click (Re) Generate"
-          />
-          <TextField
-            autoFocus
-            margin="normal"
-            id="publicKey"
-            label="Public Key"
-            type="text"
-            fullWidth
-            multiline
-            maxRows={5}
-            value={publicSignatureKey}
-            onChange={(e) => setPublicSignatureKey(e.target.value)}
-            placeholder="Paste your public key in JWK format or click (Re) Generate"
-          />
-          <Button color="primary" onClick={generateKeys}>
-            (Re) Generate
-          </Button>
-        </DialogContent>
-      )}
-      <DialogActions>
-        {onClose && (
-          <Button onClick={onClose} color="secondary">
-            Cancel
-          </Button>
+          </DialogContent>
         )}
-        <Button onClick={displayNextTab} color="primary">
-          Next
-        </Button>
-        <Button
-          onClick={() => {
-            saveSettings();
-          }}
-          disabled={isConfigurationIncomplete()}
-          color="primary"
-        >
-          Save
-        </Button>
-      </DialogActions>
-    </Dialog>
+        {currentTabIndex === 1 && (
+          <DialogContent>
+            <DialogContentText>
+              Add one or more relays. You can run a local relay to share
+              information with other users on your local network. Use a public
+              relay for a broader audience. Press ADD RELAY to confirm the
+              input.
+            </DialogContentText>
+            <TextField
+              margin="normal"
+              id="newRelayName"
+              label="Relay Name"
+              fullWidth
+              value={newRelayName}
+              onChange={(e) => setNewRelayName(e.target.value)}
+              placeholder="Eg. Localhost Relay"
+            />
+            <TextField
+              margin="normal"
+              id="newRelayValue"
+              label="Relay URL"
+              type="url"
+              fullWidth
+              value={newRelayValue}
+              placeholder="Eg. https://localhost:3003"
+              error={!relayExists}
+              onChange={(e) => setNewRelayValue(e.target.value)}
+            />
+            <Button color="primary" onClick={addRelay}>
+              Add Relay
+            </Button>
+            <List>
+              {namedRelays.map((relay: Relay, index: number) => (
+                <ListItem
+                  key={`relay-config-${btoa(relay.name)}-${btoa(relay.url)}`}
+                >
+                  <ListItemText primary={`${relay.name}: ${relay.url}`} />
+                  <Button onClick={() => removeRelay(index)}>Remove</Button>
+                </ListItem>
+              ))}
+            </List>
+          </DialogContent>
+        )}
+        {currentTabIndex === 2 && (
+          <DialogContent>
+            <DialogContentText>
+              Configure your desired identity. The email address is intended as
+              a human friendly identifier, for instance when reviewing the
+              collaboration history. No validation. The information is stored
+              locally in the browser but will be shared once you decide to
+              publish externally your media collections.
+            </DialogContentText>
+            <TextField
+              autoFocus
+              margin="normal"
+              id="author"
+              label="Author"
+              type="text"
+              fullWidth
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
+              placeholder="Eg. John Doe"
+            />
+            <TextField
+              autoFocus
+              margin="normal"
+              id="email"
+              label="Email"
+              type="email"
+              fullWidth
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Eg. john@doe.me"
+            />
+          </DialogContent>
+        )}
+        {currentTabIndex === 3 && (
+          <DialogContent>
+            <DialogContentText>
+              Keys are required for media signing and signature verification.
+              Both keys are stored locally. The private key will never leave the
+              browser. The public key will be shared once you decide to publish
+              externally your media collections. Generate new ones or bring your
+              own. Expected format is JWK (JSON Web Key) format.
+            </DialogContentText>
+            <TextField
+              autoFocus
+              margin="normal"
+              id="privateKey"
+              label="Private Key"
+              type="text"
+              fullWidth
+              multiline
+              maxRows={5}
+              value={privateSignatureKey}
+              onChange={(e) => setPrivateSignatureKey(e.target.value)}
+              placeholder="Paste your private key in JWK format or click (Re) Generate"
+            />
+            <TextField
+              autoFocus
+              margin="normal"
+              id="publicKey"
+              label="Public Key"
+              type="text"
+              fullWidth
+              multiline
+              maxRows={5}
+              value={publicSignatureKey}
+              onChange={(e) => setPublicSignatureKey(e.target.value)}
+              placeholder="Paste your public key in JWK format or click (Re) Generate"
+            />
+            <Stack direction="row" spacing={1}>
+              <Button color="primary" onClick={generateKeys}>
+                (Re) Generate
+              </Button>
+              <Divider orientation="vertical" flexItem />
+              <Button color="primary" onClick={() => setExportKeysOpen(true)}>
+                Export
+              </Button>
+              <Divider orientation="vertical" flexItem />
+              <Button color="primary" onClick={() => setImportKeysOpen(true)}>
+                Import
+              </Button>
+            </Stack>
+          </DialogContent>
+        )}
+        <DialogActions>
+          {onClose && (
+            <Button onClick={onClose} color="secondary">
+              Cancel
+            </Button>
+          )}
+          <Button onClick={displayNextTab} color="primary">
+            Next
+          </Button>
+          <Button
+            onClick={() => {
+              saveSettings();
+            }}
+            disabled={isConfigurationIncomplete()}
+            color="primary"
+          >
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog open={importKeysOpen} onClose={undefined} fullWidth={true}>
+        <DialogTitle>Import Keys</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Key import not implemented yet. Use regular copy & paste to reuse
+            existing keys.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setImportKeysOpen(false)}>Cancel</Button>
+          <Button
+            onClick={() => setImportKeysOpen(false)}
+            color="primary"
+            disabled={true}
+          >
+            Import
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog open={exportKeysOpen} onClose={undefined} fullWidth={true}>
+        <DialogTitle>Export Keys</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Key export not implemented yet. Use regular copy & paste to
+            externalize generated keys.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setExportKeysOpen(false)}>Cancel</Button>
+          <Button
+            onClick={() => setExportKeysOpen(false)}
+            color="primary"
+            disabled={true}
+          >
+            Export
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </div>
   );
 };
 
