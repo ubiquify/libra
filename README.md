@@ -11,7 +11,7 @@ Browser based, client centric media application.
 
 The media storage is either browser local (IndexedDB) or network local ([@ubiquify/restore](https://github.com/ubiquify/restore)). Media collections can be shared via relays. Multiple users can collaborate to author a given media collection, history is preserved, conflicts are automatically resolved.
 
-_Libra_ offers a user interface to the functionality offered by the [@ubiquify/media](https://github.com/ubiquify/media) module.
+_Libra_ offers a user interface to the functionality from the [@ubiquify/media](https://github.com/ubiquify/media) module.
 
 ## Network block store
 
@@ -23,7 +23,7 @@ Run a local [relay](https://github.com/ubiquify/relay) for collaboration.
 
 ## SSL
 
-> Note: Browser cryptographic libraries are available only to secure origins (ie. `https://server:port`). To run the app locally, you need to generate a self-signed certificate and configure your browser to trust it.
+> Note: Browser cryptographic libraries are available only to secure origins (ie. `https://server:port`). To run the app locally, you need to generate a self-signed certificate and configure your browser to trust it. That would also include the step to manually open the 3 urls (libra, relay, restore) and accept the certificate.
 
 ```sh
 cd ssl/
