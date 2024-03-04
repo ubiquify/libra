@@ -870,7 +870,7 @@ const MediaList: React.FC<MediaListProps> = ({
       </Dialog>
       {addedMediaNodes.map((mediaNode) => (
         <MediaItem
-          key={mediaNode.id}
+          key={`added-media-node-${mediaNode.id}`}
           mediaNode={mediaNode}
           readOnly={false}
           elevation={5}
@@ -881,7 +881,7 @@ const MediaList: React.FC<MediaListProps> = ({
       ))}
       {loadedMediaNodes.map((mediaNode) => (
         <MediaItem
-          key={mediaNode.id}
+          key={`loaded-media-node-${mediaNode.id}`}
           mediaNode={mediaNode}
           readOnly={true}
           elevation={3}

@@ -7,6 +7,8 @@ import {
   USER_PUBLIC_KEY_KEY,
 } from "./MediaConfig";
 
+import axios from "axios";
+
 const { subtle } = window.crypto;
 
 export interface CommitUtil {
@@ -172,3 +174,35 @@ export const groupByKey = (list: any[], key: string | number) =>
     }),
     {}
   );
+
+  export const validateRelayExists = async (relayUrl: string): Promise<boolean> => {
+    if (relayUrl) {
+      try {
+        if (!relayUrl.endsWith("/")) {
+          relayUrl = `${relayUrl}/`;
+        }
+        relayUrl = `${relayUrl}protocol/version`;
+        const response = await axios.get(relayUrl);
+        return response.status === 200;
+      } catch (e) {
+        return false;
+      }
+    } else return true; // Empty is valid
+  };
+
+  export const validateNetworkStoreExists = async (
+    blockStoreUrl: string
+  ): Promise<boolean> => {
+    if (blockStoreUrl) {
+      try {
+        if (!blockStoreUrl.endsWith("/")) {
+          blockStoreUrl = `${blockStoreUrl}/`;
+        }
+        blockStoreUrl = `${blockStoreUrl}cids?limit=1`;
+        const response = await axios.get(blockStoreUrl);
+        return response.status === 200;
+      } catch (e) {
+        return false;
+      }
+    } else return true; // Empty is valid
+  };

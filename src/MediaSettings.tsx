@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { NamedKey, Relay } from "./MediaConfig";
 import Button from "@mui/material/Button";
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined";
 import VpnKeyOutlinedIcon from "@mui/icons-material/VpnKeyOutlined";
 import PermIdentityOutlinedIcon from "@mui/icons-material/PermIdentityOutlined";
 import AppRegistrationIcon from "@mui/icons-material/AppRegistration";
+import SdStorageOutlinedIcon from "@mui/icons-material/SdStorageOutlined";
 import TextField from "@mui/material/TextField";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -16,18 +16,33 @@ import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
-import axios from "axios";
 
-import { cryptoUtil, CryptoUtil } from "./MediaUtil";
 import {
+  cryptoUtil,
+  CryptoUtil,
+  validateNetworkStoreExists,
+  validateRelayExists,
+} from "./MediaUtil";
+import {
+  NamedKey,
+  Relay,
   APP_NAME_KEY,
   USER_NAME_KEY,
   USER_EMAIL_KEY,
   USER_PRIVATE_KEY_KEY,
   USER_PUBLIC_KEY_KEY,
+  NETWORK_BLOCK_STORE_KEY,
+  BLOCK_STORE_CHOICE_KEY,
 } from "./MediaConfig";
-import { Divider } from "@mui/material";
-import { Stack } from "@mui/system";
+import {
+  Divider,
+  FormControl,
+  FormControlLabel,
+  Radio,
+  RadioGroup,
+} from "@mui/material";
+import { display, Stack } from "@mui/system";
+import { set } from "idb-keyval";
 
 const MediaSettings = ({ open, onClose, mediaConfig }) => {
   const [newRelayName, setNewRelayName] = useState("");
@@ -35,6 +50,9 @@ const MediaSettings = ({ open, onClose, mediaConfig }) => {
   const [relayExists, setRelayExists] = useState(false);
   const [privateSignatureKey, setPrivateSignatureKey] = useState("");
   const [publicSignatureKey, setPublicSignatureKey] = useState("");
+  const [blockStoreChoice, setBlockStoreChoice] = useState("browser");
+  const [networkBlockStore, setNetworkBlockStore] = useState("");
+  const [networkBlockStoreExists, setNetworkBlockStoreExists] = useState(false);
   const [currentTabIndex, setCurrentTabIndex] = useState(0);
   const [namedRelays, setNamedRelays] = useState<Relay[]>([]);
   const [author, setAuthor] = useState<string>("");
@@ -56,6 +74,18 @@ const MediaSettings = ({ open, onClose, mediaConfig }) => {
     const publicSignatureKey = keys.find(
       (key: NamedKey) => key.name === USER_PUBLIC_KEY_KEY
     );
+    const blockStoreChoiceKey = keys.find(
+      (key: NamedKey) => key.name === BLOCK_STORE_CHOICE_KEY
+    );
+    const networkBlockStoreKey = keys.find(
+      (key: NamedKey) => key.name === NETWORK_BLOCK_STORE_KEY
+    );
+    if (blockStoreChoiceKey !== undefined) {
+      setBlockStoreChoice(blockStoreChoiceKey.key);
+    }
+    if (networkBlockStoreKey !== undefined) {
+      setNetworkBlockStore(networkBlockStoreKey.key);
+    }
     if (privateSignatureKey !== undefined) {
       setPrivateSignatureKey(privateSignatureKey.key);
     }
@@ -84,10 +114,15 @@ const MediaSettings = ({ open, onClose, mediaConfig }) => {
         const isValid = await validateRelayExists(newRelayValue);
         setRelayExists(isValid);
       }
+      if (networkBlockStore === undefined) {
+        setNetworkBlockStoreExists(false);
+      } else {
+        const isValid = await validateNetworkStoreExists(networkBlockStore);
+        setNetworkBlockStoreExists(isValid);
+      }
     };
-
     validate();
-  }, [newRelayValue]);
+  }, [newRelayValue, networkBlockStore]);
 
   const saveSettings = async () => {
     await mediaConfig.setNamedRelays(namedRelays);
@@ -112,7 +147,16 @@ const MediaSettings = ({ open, onClose, mediaConfig }) => {
         name: USER_EMAIL_KEY,
         key: email,
       },
+      {
+        name: NETWORK_BLOCK_STORE_KEY,
+        key: networkBlockStore,
+      },
+      {
+        name: BLOCK_STORE_CHOICE_KEY,
+        key: blockStoreChoice,
+      },
     ]);
+
     await mediaConfig.commit();
     onClose();
   };
@@ -134,19 +178,6 @@ const MediaSettings = ({ open, onClose, mediaConfig }) => {
     setNamedRelays(updatedRelays);
   };
 
-  const validateRelayExists = async (relayUrl: string): Promise<boolean> => {
-    try {
-      if (!relayUrl.endsWith("/")) {
-        relayUrl = `${relayUrl}/`;
-      }
-      relayUrl = `${relayUrl}protocol/version`;
-      const response = await axios.get(relayUrl);
-      return response.status === 200;
-    } catch (e) {
-      return false;
-    }
-  };
-
   const generateKeys = async () => {
     const keyUtil = cryptoUtil();
     const keyPair = await keyUtil.generateSignatureKeys();
@@ -163,7 +194,7 @@ const MediaSettings = ({ open, onClose, mediaConfig }) => {
   };
 
   const displayNextTab = () => {
-    if (currentTabIndex < 3) {
+    if (currentTabIndex < 4) {
       setCurrentTabIndex(currentTabIndex + 1);
     } else {
       setCurrentTabIndex(0);
@@ -176,7 +207,8 @@ const MediaSettings = ({ open, onClose, mediaConfig }) => {
       !email ||
       !privateSignatureKey ||
       !publicSignatureKey ||
-      !appName
+      !appName ||
+      (blockStoreChoice === "network" && !networkBlockStoreExists)
     );
   };
 
@@ -201,6 +233,11 @@ const MediaSettings = ({ open, onClose, mediaConfig }) => {
             label="Keys"
             iconPosition="start"
           />
+          <Tab
+            icon={<SdStorageOutlinedIcon />}
+            label="Storage"
+            iconPosition="start"
+          />
         </Tabs>
         {currentTabIndex === 0 && (
           <DialogContent>
@@ -209,17 +246,6 @@ const MediaSettings = ({ open, onClose, mediaConfig }) => {
               are required. All data you provide will stay in the browser.
               Please click Next to continue.
             </DialogContentText>
-            {/* <TextField
-            autoFocus
-            margin="normal"
-            id="appName"
-            label="Application Name"
-            type="text"
-            fullWidth
-            value={appName}
-            onChange={(e) => setAppName(e.target.value)}
-            placeholder="Eg. My Media Vault"
-          /> */}
           </DialogContent>
         )}
         {currentTabIndex === 1 && (
@@ -346,6 +372,46 @@ const MediaSettings = ({ open, onClose, mediaConfig }) => {
                 Import
               </Button>
             </Stack>
+          </DialogContent>
+        )}
+        {currentTabIndex === 4 && (
+          <DialogContent>
+            <DialogContentText>
+              Configure where your data should be stored. For large media it is
+              recommended to use a block store running on the local network.
+            </DialogContentText>
+            <FormControl>
+              <RadioGroup
+                row
+                aria-label="blockStore"
+                name="blockStore"
+                value={blockStoreChoice}
+                onChange={(e) => setBlockStoreChoice(e.target.value)}
+              >
+                <FormControlLabel
+                  value="browser"
+                  control={<Radio />}
+                  label="Browser Store"
+                />
+                <FormControlLabel
+                  value="network"
+                  control={<Radio />}
+                  label="Network Store"
+                />
+              </RadioGroup>
+            </FormControl>
+            <TextField
+              margin="normal"
+              disabled={blockStoreChoice !== "network"}
+              id="networkBlockStore"
+              label="Network Block Store"
+              type="url"
+              fullWidth
+              value={networkBlockStore}
+              placeholder="Eg. https://localhost:3009"
+              error={!networkBlockStoreExists}
+              onChange={(e) => setNetworkBlockStore(e.target.value)}
+            />
           </DialogContent>
         )}
         <DialogActions>

@@ -9,9 +9,13 @@ Browser based, client centric media application.
 - serverless
 - cloudless
 
-The media stays in the browser (IndexedDB). Media collections can be shared with other users or apps via relays. Multiple users can collaborate to author a given media collection, history is preserved, conflicts are automatically resolved.
+The media storage is either browser local (IndexedDB) or network local ([@ubiquify/restore](https://github.com/ubiquify/restore)). Media collections can be shared via relays. Multiple users can collaborate to author a given media collection, history is preserved, conflicts are automatically resolved.
 
-Exposes the functionality inherited from the underlying [@ubiquify/media](https://github.com/ubiquify/media) kernel.
+_Libra_ offers a user interface to the functionality offered by the [@ubiquify/media](https://github.com/ubiquify/media) module.
+
+## Network block store
+
+For large media files, a network block store is recommended. The [@ubiquify/restore](https://github.com/ubiquify/restore) module is a good candidate.
 
 ## Share
 
@@ -67,6 +71,21 @@ services:
       - type: bind
         source: ./ssl
         target: /app/ssl
+        
+  restore-server-3009:
+    image: ubiquify/restore:latest
+    container_name: restore-server-3009
+    ports:
+      - "3007:3007"
+      - "3009:3009"
+    volumes:
+      - type: bind
+        source: ./ssl
+        target: /app/ssl
+      - type: bind
+        source: ./data
+        target: /app/data
+
 ```
 
 ## Licenses

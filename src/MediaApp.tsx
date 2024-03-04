@@ -18,10 +18,13 @@ import Stack from "@mui/material/Stack";
 import { QRCodeSVG } from "qrcode.react";
 import QrCodeIcon from "@mui/icons-material/QrCode";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
+import SdStorageOutlinedIcon from "@mui/icons-material/SdStorageOutlined";
 import Divider from "@mui/material/Divider";
 import MediaSettings from "./MediaSettings";
 
 import logo from "./img/logo.jpg";
+import { validateNetworkStoreExists } from "./MediaUtil";
+import Alert from "@mui/material/Alert";
 
 const MediaApp = () => {
   const pathname = window.location.pathname;
@@ -34,6 +37,37 @@ const MediaApp = () => {
   const [currentMediaIdentifier, setCurrentMediaIdentifier] = useState("");
   const [actionPath, setActionPath] = useState<string>("");
   const [qrOpen, setQrOpen] = useState(false);
+  const [blockStoreExists, setBlockStoreExists] = useState(true);
+  const [alertMessage, setAlertMessage] = useState<string | undefined>();
+  const [alertType, setAlertType] = useState<
+    "error" | "warning" | "info" | "success" | undefined
+  >();
+  const [alertHandler, setAlertHandler] = useState<() => () => void>(undefined);
+  const [alertOpen, setAlertOpen] = useState(false);
+
+  const displayAlert = (
+    message: string,
+    type: "error" | "warning" | "info" | "success",
+    handler: () => () => void = undefined
+  ) => {
+    setAlertMessage(message);
+    setAlertType(type);
+    setAlertOpen(true);
+    setAlertHandler(handler);
+  };
+
+  const handleCloseAlert = () => {
+    setAlertOpen(false);
+    setAlertMessage(undefined);
+    setAlertType(undefined);
+    setAlertHandler(undefined);
+  };
+
+  const handleClickAlert = () => {
+    if (alertHandler) {
+      alertHandler();
+    }
+  };
 
   const openSettings = () => setSettingsOpen(true);
 
@@ -54,8 +88,22 @@ const MediaApp = () => {
       setMediaConfig(mediaConfig);
       if (await mediaConfig.isConfigured()) {
         await mediaConfig.load();
-        factory = await mediaFactoryBuilder();
+        factory = await mediaFactoryBuilder(mediaConfig);
         setMediaFactory(factory);
+        const blockStoreChoice = mediaConfig.getBlockStoreChoice();
+        if (blockStoreChoice === "network") {
+          const exists = await validateNetworkStoreExists(
+            mediaConfig.getNetworkBlockStore()
+          );
+          if (!exists) {
+            displayAlert(
+              "Network Block Store is not available. Click here to check the settings.",
+              "error",
+              () => openSettings
+            );
+          }
+          setBlockStoreExists(exists);
+        }
         setLoading(false);
       } else {
         setPerformSetup(true);
@@ -108,6 +156,31 @@ const MediaApp = () => {
     cursor: "pointer",
   };
 
+  const blockStoreText = () => {
+    if (mediaConfig.getBlockStoreChoice() === "network") {
+      return mediaConfig.getNetworkBlockStore();
+    } else {
+      return "IndexedDB";
+    }
+  };
+
+  const pickBlockStoreColor = (): "default" | "info" | "warning" | "error" => {
+    const storeChoice = mediaConfig.getBlockStoreChoice();
+    const index =
+      storeChoice === "browser"
+        ? 0
+        : storeChoice === "network" && blockStoreExists
+        ? 1
+        : 2;
+    switch (index) {
+      case 0:
+        return "default";
+      case 1:
+        return "info";
+      case 2:
+        return "error";
+    }
+  };
   return (
     <div>
       <Stack
@@ -166,6 +239,19 @@ const MediaApp = () => {
           justifyContent="flex-end"
           alignItems="flex-end"
         >
+          <IconButton
+            aria-label="block-store"
+            size="large"
+            style={pointerCursorStyle}
+            color={pickBlockStoreColor()}
+          >
+            <SdStorageOutlinedIcon fontSize="inherit" />
+          </IconButton>
+          <Tooltip title="Block Store">
+            <Button size="large" sx={{ textTransform: "none" }}>
+              {blockStoreText()}
+            </Button>
+          </Tooltip>
           <Tooltip title="Media Path">
             <Button size="large" sx={{ textTransform: "none" }}>
               {actionPath}
@@ -213,7 +299,7 @@ const MediaApp = () => {
         onClose={closeSetup}
         mediaConfig={mediaConfig}
       ></MediaSettings>
-      {mediaFactory && (
+      {blockStoreExists && mediaFactory && (
         <MediaList
           alias={pathname}
           mediaFactory={mediaFactory}
@@ -221,6 +307,16 @@ const MediaApp = () => {
           onMediaIdentifierChange={setCurrentMediaIdentifier}
           onActionPathChange={setActionPath}
         />
+      )}
+      {alertOpen && (
+        <Alert
+          onClose={handleCloseAlert}
+          onClick={handleClickAlert}
+          severity={alertType}
+          style={{ cursor: "pointer" }}
+        >
+          {alertMessage}
+        </Alert>
       )}
     </div>
   );

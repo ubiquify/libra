@@ -13,6 +13,8 @@ export const USER_NAME_KEY = "mediaSystem.userName";
 export const USER_EMAIL_KEY = "mediaSystem.userEmail";
 export const USER_PRIVATE_KEY_KEY = "mediaSystem.userPrivateKey";
 export const USER_PUBLIC_KEY_KEY = "mediaSystem.userPublicKey";
+export const BLOCK_STORE_CHOICE_KEY = "mediaSystem.blockStoreChoice";
+export const NETWORK_BLOCK_STORE_KEY = "mediaSystem.networkBlockStore";
 
 export interface Relay {
   name: string;
@@ -33,6 +35,8 @@ export interface MediaConfig {
   setNamedKeys(keys: NamedKey[]): void;
   listNamedRelays(): Relay[];
   listNamedKeys(): NamedKey[];
+  getBlockStoreChoice(): "browser" | "network" ;
+  getNetworkBlockStore(): string;
   commit(): Promise<void>;
   load(): Promise<void>;
   clearConfig(): Promise<void>;
@@ -160,7 +164,35 @@ export const mediaConfigFactory = async (): Promise<MediaConfig> => {
     return keys;
   };
 
+  const getNetworkBlockStore = (): string | undefined => {
+    let networkBlockStore = undefined;
+    const namedKey = getNamedKey(NETWORK_BLOCK_STORE_KEY);
+    if (
+      namedKey !== undefined &&
+      namedKey.key !== undefined &&
+      namedKey.key.trim() !== ""
+    ) {
+      networkBlockStore = namedKey.key;
+    }
+    return networkBlockStore;
+  };
+
+  const getBlockStoreChoice = (): "network" | "browser" | undefined => {
+    let blockStoreChoice = undefined;
+    const namedKey = getNamedKey(BLOCK_STORE_CHOICE_KEY);
+    if (
+      namedKey !== undefined &&
+      namedKey.key !== undefined &&
+      namedKey.key.trim() !== ""
+    ) {
+      blockStoreChoice = namedKey.key;
+    }
+    return blockStoreChoice;
+  };
+
   return {
+    getBlockStoreChoice,
+    getNetworkBlockStore,
     listNamedRelays,
     listNamedKeys,
     getNamedRelay,

@@ -33,13 +33,16 @@ import {
 } from "@ubiquify/weblock";
 
 import { set, get, createStore, clear } from "idb-keyval";
-import { CommitInfo } from "./MediaUtil";
-const cache = {};
-const blockStore: BrowserBlockStore = browserBlockStore({ cache });
+import { CommitInfo, validateNetworkStoreExists } from "./MediaUtil";
+import { MediaConfig, NETWORK_BLOCK_STORE_KEY } from "./MediaConfig";
+import { createRestoreBlockStore } from "./RestoreClient";
+
 const { chunk } = chunkerFactory(CHUNK_SIZE_DEFAULT, compute_chunks);
 const linkCodec: LinkCodec = linkCodecFactory();
 const valueCodec: ValueCodec = valueCodecFactory();
-const MEDIA_SYSTEM_ROOT = "mediaSystem.root";
+// const MEDIA_SYSTEM_ROOT = "mediaSystem.root";
+const MEDIA_SYSTEM_ROOT_BROWSER = "mediaSystem.root.browser";
+const MEDIA_SYSTEM_ROOT_NETWORK = "mediaSystem.root.network";
 
 const newMediaCollection = async (
   blockStore: BlockStore
@@ -167,17 +170,44 @@ export interface MediaFactory {
   }) => Promise<MediaCollection | undefined>;
   clearRoot: () => Promise<void>;
   clearBlocks: () => Promise<void>;
+  clearCache: () => void;
 }
 
-export const mediaFactoryBuilder = async (): Promise<MediaFactory> => {
+export const mediaFactoryBuilder = async (
+  mediaConfig: MediaConfig
+): Promise<MediaFactory> => {
   const rootStore = createStore("media-root-store", "media-root");
+  const cache = {};
 
-  const getRoot = async (): Promise<string> => {
-    return await get(MEDIA_SYSTEM_ROOT, rootStore);
-  };
+  const mediaStoreChoice = mediaConfig.getBlockStoreChoice();
+  const restoreUrl = mediaConfig.getNetworkBlockStore();
+  let blockStore = undefined;
+  if (mediaStoreChoice === "browser") {
+    blockStore = browserBlockStore({ cache });
+  } else {
+    if (validateNetworkStoreExists(restoreUrl)) {
+      blockStore = createRestoreBlockStore({ baseURL: restoreUrl }, cache);
+    } else {
+      throw new Error("Network store does not exist");
+    }
+  }
 
   const setRoot = async (value: string): Promise<void> => {
-    await set(MEDIA_SYSTEM_ROOT, value, rootStore);
+    if (mediaStoreChoice === "browser") {
+      await set(MEDIA_SYSTEM_ROOT_BROWSER, value, rootStore);
+    } else if (mediaStoreChoice === "network") {
+      await set(MEDIA_SYSTEM_ROOT_NETWORK, value, rootStore);
+    } else throw new Error("Invalid media store choice");
+  };
+
+  const getRoot = async (): Promise<string> => {
+    let root = "";
+    if (mediaStoreChoice === "browser") {
+      root = await get(MEDIA_SYSTEM_ROOT_BROWSER, rootStore);
+    } else if (mediaStoreChoice === "network")
+      root = await get(MEDIA_SYSTEM_ROOT_NETWORK, rootStore);
+    else throw new Error("Invalid media store choice");
+    return root;
   };
 
   const clearRoot = async (): Promise<void> => {
@@ -378,6 +408,12 @@ export const mediaFactoryBuilder = async (): Promise<MediaFactory> => {
     return mediaCollection;
   };
 
+  const clearCache = (): void => {
+    for (const key of Object.keys(cache)) {
+      delete cache[key];
+    }
+  };
+
   return {
     currentMediaCollectionByAlias,
     exportMediaCollection,
@@ -395,5 +431,6 @@ export const mediaFactoryBuilder = async (): Promise<MediaFactory> => {
     commitMediaSystem,
     clearRoot,
     clearBlocks,
+    clearCache,
   };
 };
